@@ -1,39 +1,36 @@
+// client.go
+
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
-	"os"
 )
 
 func main() {
-	// Conectarse al servidor en el puerto 8080
-	conn, err := net.Dial("tcp", "localhost:8080")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-	fmt.Println("Conectado al servidor")
+	sendMessage("localhost:8080", "Hello, server!")
+}
 
-	// Leer mensaje del servidor
-	message, err := bufio.NewReader(conn).ReadString('\n')
+func sendMessage(serverAddr, message string) {
+	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
-		fmt.Println("Error al leer del servidor:", err)
+		fmt.Println("Error connecting:", err.Error())
 		return
 	}
-	fmt.Print("Mensaje del servidor: ", message)
+	defer conn.Close()
 
-	// Enviar mensaje al servidor
-	fmt.Fprintf(conn, "Hola desde el cliente\n")
+	_, err = conn.Write([]byte(message + "\n"))
+	if err != nil {
+		fmt.Println("Error writing:", err.Error())
+		return
+	}
 
-	// Leer respuestas adicionales del servidor
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		fmt.Println("Recibido del servidor:", scanner.Text())
+	reply := make([]byte, 4096)
+	_, err = conn.Read(reply)
+	if err != nil {
+		fmt.Println("Error reading:", err.Error())
+		return
 	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error al leer del servidor:", err)
-	}
+
+	fmt.Println("Server says:", string(reply))
 }
