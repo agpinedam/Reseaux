@@ -1,62 +1,62 @@
-// client_test.go
-
 package main
 
 import (
-	"bufio"
 	"errors"
 	"net"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestSendMessage(t *testing.T) {
-	listener, err := net.Listen("tcp", ":8082")
+	addr := ":8082"
+	conn, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	defer conn.Close()
 
 	// Canal para enviar errores desde gorutinas secundarias
 	errCh := make(chan error)
 
 	go func() {
-		conn, err := listener.Accept()
-		if err != nil {
-			errCh <- err
-			return
-		}
-		defer conn.Close()
-
-		message, err := bufio.NewReader(conn).ReadString('\n')
+		buffer := make([]byte, 1024)
+		n, clientAddr, err := conn.ReadFrom(buffer)
 		if err != nil {
 			errCh <- err
 			return
 		}
 
-		expected := "Hello, server!\n"
+		message := string(buffer[:n])
+		expected := "Hello, server!"
 		if strings.Compare(expected, message) != 0 {
 			errCh <- errors.New("Unexpected message")
 			return
 		}
 
-		_, err = conn.Write([]byte("Server reply\n"))
+		_, err = conn.WriteTo([]byte("Server reply"), clientAddr)
 		if err != nil {
 			errCh <- err
 			return
 		}
+
+		// Cerramos el canal para indicar que la gorutina ha terminado
+		close(errCh)
 	}()
+
+	// Espera un breve tiempo para que el servidor se inicie
+	time.Sleep(100 * time.Millisecond)
 
 	// Ejecuta la función de prueba
 	sendMessage("localhost:8082", "Hello, server!")
 
 	// Manejo de errores de gorutinas secundarias
 	select {
-	case err := <-errCh:
-		if err != nil {
+	case err, ok := <-errCh:
+		if ok && err != nil {
 			t.Fatal(err)
 		}
-	default:
-		// No hay errores, continuar con el test
+	case <-time.After(1 * time.Second):
+		t.Fatal("Timeout esperando respuesta del servidor")
 	}
 }

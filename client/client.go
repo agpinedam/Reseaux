@@ -1,5 +1,3 @@
-// client.go
-
 package main
 
 import (
@@ -12,14 +10,14 @@ func main() {
 }
 
 func sendMessage(serverAddr, message string) {
-	conn, err := net.Dial("tcp", serverAddr)
+	conn, err := net.Dial("udp", serverAddr)
 	if err != nil {
 		fmt.Println("Error connecting:", err.Error())
 		return
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte(message + "\n"))
+	_, err = conn.Write([]byte(message))
 	if err != nil {
 		fmt.Println("Error writing:", err.Error())
 		return
