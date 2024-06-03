@@ -1,0 +1,11 @@
+<network>
+  <name>network-192-168-1</name>
+  <uuid>3e6c34bf-6e41-45e7-8783-21d63ae8a634</uuid>
+  <bridge name="virbr192" stp="on" delay="0"/>
+  <mac address="52:54:00:33:d4:bb"/>
+  <ip address="192.168.1.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="192.168.1.2" end="192.168.1.254"/>
+    </dhcp>
+  </ip>
+</network>
