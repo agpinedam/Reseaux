@@ -1,0 +1,5 @@
+#routeur-serveuryaml
+- interface:
+     device: eth0
+     ip: 172.16.180.1
+     mask: 24

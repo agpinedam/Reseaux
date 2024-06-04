@@ -35,6 +35,6 @@ func startClient(port string) {
 }
 
 func main() {
-	port := "8081"
+	port := "8080"
 	startClient(port)
 }
