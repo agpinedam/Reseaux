@@ -1,62 +1,69 @@
 package main
 
 import (
-	"errors"
+	"bufio"
+	"fmt"
 	"net"
-	"strings"
 	"testing"
 	"time"
 )
 
-func TestSendMessage(t *testing.T) {
-	addr := ":8082"
-	conn, err := net.ListenPacket("udp", addr)
+func startTestServer(t *testing.T) (net.PacketConn, int) {
+	conn, err := net.ListenPacket("udp", ":0")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("No se pudo iniciar el servidor de prueba: %v", err)
 	}
-	defer conn.Close()
-
-	// Canal para enviar errores desde gorutinas secundarias
-	errCh := make(chan error)
+	port := conn.LocalAddr().(*net.UDPAddr).Port
 
 	go func() {
 		buffer := make([]byte, 1024)
-		n, clientAddr, err := conn.ReadFrom(buffer)
-		if err != nil {
-			errCh <- err
-			return
-		}
+		for {
+			n, addr, err := conn.ReadFrom(buffer)
+			if err != nil {
+				return
+			}
 
-		message := string(buffer[:n])
-		expected := "Hello, server!"
-		if strings.Compare(expected, message) != 0 {
-			errCh <- errors.New("Unexpected message")
-			return
-		}
+			message := string(buffer[:n])
+			fmt.Println("Recibido del cliente:", message)
 
-		_, err = conn.WriteTo([]byte("Server reply"), clientAddr)
-		if err != nil {
-			errCh <- err
-			return
+			response := "Hola desde el servidor"
+			_, err = conn.WriteTo([]byte(response), addr)
+			if err != nil {
+				return
+			}
 		}
-
-		// Cerramos el canal para indicar que la gorutina ha terminado
-		close(errCh)
 	}()
 
-	// Espera un breve tiempo para que el servidor se inicie
-	time.Sleep(100 * time.Millisecond)
+	// Pequeña espera para asegurar que el servidor de prueba esté completamente iniciado
+	time.Sleep(500 * time.Millisecond)
 
-	// Ejecuta la función de prueba
-	sendMessage("localhost:8082", "Hello, server!")
+	return conn, port
+}
 
-	// Manejo de errores de gorutinas secundarias
-	select {
-	case err, ok := <-errCh:
-		if ok && err != nil {
-			t.Fatal(err)
-		}
-	case <-time.After(1 * time.Second):
-		t.Fatal("Timeout esperando respuesta del servidor")
+func TestServer(t *testing.T) {
+	conn, port := startTestServer(t)
+	defer conn.Close()
+
+	clientConn, err := net.Dial("udp", fmt.Sprintf("localhost:%d", port))
+	if err != nil {
+		t.Fatalf("No se pudo conectar al servidor: %v", err)
+	}
+	defer clientConn.Close()
+
+	message := "Mensaje de prueba"
+	_, err = clientConn.Write([]byte(message))
+	if err != err {
+		t.Fatalf("Error al enviar mensaje al servidor: %v", err)
+	}
+
+	reply := make([]byte, 1024)
+	n, err := bufio.NewReader(clientConn).Read(reply)
+	if err != nil {
+		t.Fatalf("Error al leer la respuesta del servidor: %v", err)
+	}
+
+	expectedMessage := "Hola desde el servidor"
+	if string(reply[:n]) != expectedMessage {
+		t.Errorf("Mensaje esperado: %s, pero se recibió: %s", expectedMessage, string(reply[:n]))
 	}
 }

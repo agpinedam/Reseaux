@@ -3,27 +3,28 @@ package main
 import (
 	"fmt"
 	"net"
+	"time"
 )
 
-func main() {
-	sendMessage("localhost:8080", "Hello, server!")
-}
+// Función para iniciar el cliente UDP
+func startClient(port string) {
+	time.Sleep(2 * time.Second) // Espera a que el servidor se inicie completamente
 
-func sendMessage(serverAddr, message string) {
-	conn, err := net.Dial("udp", serverAddr)
+	conn, err := net.Dial("udp", "localhost:"+port)
 	if err != nil {
 		fmt.Println("Error connecting:", err.Error())
 		return
 	}
 	defer conn.Close()
 
+	message := "Hello, server!"
 	_, err = conn.Write([]byte(message))
 	if err != nil {
 		fmt.Println("Error writing:", err.Error())
 		return
 	}
 
-	reply := make([]byte, 4096)
+	reply := make([]byte, 1024)
 	_, err = conn.Read(reply)
 	if err != nil {
 		fmt.Println("Error reading:", err.Error())
@@ -31,4 +32,9 @@ func sendMessage(serverAddr, message string) {
 	}
 
 	fmt.Println("Server says:", string(reply))
+}
+
+func main() {
+	port := "8081"
+	startClient(port)
 }
