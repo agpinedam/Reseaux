@@ -75,6 +75,15 @@ func printRIPFormat(interfaces []struct{ Interface Interfaz }, routerName string
 	fmt.Println("# Fin de la table de routage.")
 }
 
+// Función para convertir bytes en una cadena de octetos
+func bytesToOctets(data []byte) string {
+	octets := make([]string, len(data))
+	for i, b := range data {
+		octets[i] = fmt.Sprintf("%03d", b)
+	}
+	return strings.Join(octets, " ")
+}
+
 func main() {
 	// Lista de archivos YAML para cada router
 	files := []string{
@@ -128,5 +137,8 @@ func main() {
 
 		// Imprimir el mensaje RIP en formato hexadecimal
 		fmt.Printf("Mensaje RIP para %s: % X\n", routerName, buffer.Bytes())
+
+		// Imprimir el mensaje RIP en formato de octetos
+		fmt.Printf("Mensaje RIP en octetos para %s: %s\n", routerName, bytesToOctets(buffer.Bytes()))
 	}
 }
