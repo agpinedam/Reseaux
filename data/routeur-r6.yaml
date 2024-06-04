@@ -1,8 +1,0 @@
-- interface:
-     device: eth1
-     ip: 172.16.180.254
-     mask: 24
-- interface:
-     device: eth0
-     ip: 10.1.7.2
-     mask: 30
