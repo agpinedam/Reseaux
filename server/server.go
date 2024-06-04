@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-	// Escuchar en el puerto 8080
 	conn, err := net.ListenPacket("udp", ":8080")
 	if err != nil {
 		fmt.Println(err)
@@ -25,14 +24,13 @@ func main() {
 		}
 		fmt.Println("Cliente conectado")
 
-		// Enviar un mensaje al cliente
 		_, err = conn.WriteTo([]byte("Hola desde el servidor"), addr)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
-		message := string(buffer[:n])
-		fmt.Println("Recibido del cliente:", message)
+		fmt.Printf("Mensaje RIP recibido en hexadecimal: % X\n", buffer[:n])
+		fmt.Printf("Mensaje RIP recibido en octetos: %v\n", buffer[:n])
 	}
 }

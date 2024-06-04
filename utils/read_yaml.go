@@ -75,15 +75,6 @@ func printRIPFormat(interfaces []struct{ Interface Interfaz }, routerName string
 	fmt.Println("# Fin de la table de routage.")
 }
 
-// Función para convertir bytes en una cadena de octetos
-func bytesToOctets(data []byte) string {
-	octets := make([]string, len(data))
-	for i, b := range data {
-		octets[i] = fmt.Sprintf("%03d", b)
-	}
-	return strings.Join(octets, " ")
-}
-
 func main() {
 	// Lista de archivos YAML para cada router
 	files := []string{
@@ -96,6 +87,13 @@ func main() {
 		"data/routeur-r6.yaml",
 		"data/routeur-serveur.yaml",
 	}
+
+	var buffer bytes.Buffer
+
+	// Añadir los campos fijos del encabezado RIP
+	buffer.WriteByte(2)        // Comando: Respuesta
+	buffer.WriteByte(2)        // Versión: RIP v2
+	buffer.Write([]byte{0, 0}) // Dominio de enrutamiento: 0
 
 	for _, file := range files {
 		// Leer el archivo YAML
@@ -117,14 +115,6 @@ func main() {
 		// Imprimir la información en el formato RIP
 		printRIPFormat(interfaces, routerName)
 
-		// Crear un buffer para construir el mensaje RIP
-		var buffer bytes.Buffer
-
-		// Añadir los campos fijos del encabezado RIP
-		buffer.WriteByte(2)        // Comando: Respuesta
-		buffer.WriteByte(2)        // Versión: RIP v2
-		buffer.Write([]byte{0, 0}) // Dominio de enrutamiento: 0
-
 		// Añadir las entradas de ruta
 		for _, interfaz := range interfaces {
 			buffer.Write([]byte{0, 2})                                                                          // Identifieur de famille d'@ : 2 (IPv4)
@@ -134,11 +124,13 @@ func main() {
 			buffer.Write(ipToBytes("0.0.0.0"))                                                                  // Passerelle : 0.0.0.0 (no gateway)
 			buffer.Write([]byte{0, 0, 0, 1})                                                                    // Métrique : 1
 		}
-
-		// Imprimir el mensaje RIP en formato hexadecimal
-		fmt.Printf("Mensaje RIP para %s: % X\n", routerName, buffer.Bytes())
-
-		// Imprimir el mensaje RIP en formato de octetos
-		fmt.Printf("Mensaje RIP en octetos para %s: %s\n", routerName, bytesToOctets(buffer.Bytes()))
 	}
+
+	// Guardar el mensaje RIP en un archivo binario
+	err := ioutil.WriteFile("../rip_message.bin", buffer.Bytes(), 0644)
+	if err != nil {
+		log.Fatalf("Error al escribir el archivo RIP: %v", err)
+	}
+
+	fmt.Println("Archivo RIP generado correctamente: rip_message.bin")
 }

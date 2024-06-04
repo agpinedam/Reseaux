@@ -7,9 +7,13 @@ import (
 	"time"
 )
 
-// Función para iniciar el cliente UDP
+func main() {
+	port := "8080"
+	startClient(port)
+}
+
 func startClient(port string) {
-	time.Sleep(2 * time.Second) // Espera a que el servidor se inicie completamente
+	time.Sleep(2 * time.Second)
 
 	conn, err := net.Dial("udp", "localhost:"+port)
 	if err != nil {
@@ -18,14 +22,12 @@ func startClient(port string) {
 	}
 	defer conn.Close()
 
-	// Leer el archivo RIP
-	ripMessage, err := ioutil.ReadFile("../rip_message.bin")
+	ripMessage, err := ioutil.ReadFile("rip_message.bin")
 	if err != nil {
 		fmt.Println("Error reading RIP message:", err.Error())
 		return
 	}
 
-	// Enviar el mensaje RIP
 	_, err = conn.Write(ripMessage)
 	if err != nil {
 		fmt.Println("Error writing:", err.Error())
@@ -40,9 +42,4 @@ func startClient(port string) {
 	}
 
 	fmt.Println("Server says:", string(reply[:n]))
-}
-
-func main() {
-	port := "8080"
-	startClient(port)
 }
