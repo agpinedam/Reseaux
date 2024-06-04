@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"time"
 )
@@ -17,21 +18,28 @@ func startClient(port string) {
 	}
 	defer conn.Close()
 
-	message := "Hello, server!"
-	_, err = conn.Write([]byte(message))
+	// Leer el archivo RIP
+	ripMessage, err := ioutil.ReadFile("../rip_message.bin")
+	if err != nil {
+		fmt.Println("Error reading RIP message:", err.Error())
+		return
+	}
+
+	// Enviar el mensaje RIP
+	_, err = conn.Write(ripMessage)
 	if err != nil {
 		fmt.Println("Error writing:", err.Error())
 		return
 	}
 
 	reply := make([]byte, 1024)
-	_, err = conn.Read(reply)
+	n, err := conn.Read(reply)
 	if err != nil {
 		fmt.Println("Error reading:", err.Error())
 		return
 	}
 
-	fmt.Println("Server says:", string(reply))
+	fmt.Println("Server says:", string(reply[:n]))
 }
 
 func main() {

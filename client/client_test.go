@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"testing"
 	"time"
@@ -23,8 +24,8 @@ func startTestServer(t *testing.T) (net.PacketConn, int) {
 				return
 			}
 
-			message := string(buffer[:n])
-			fmt.Println("Recibido del cliente:", message)
+			fmt.Printf("Mensaje RIP recibido en hexadecimal: % X\n", buffer[:n])
+			fmt.Printf("Mensaje RIP recibido en octetos: %v\n", buffer[:n])
 
 			response := "Hola desde el servidor"
 			_, err = conn.WriteTo([]byte(response), addr)
@@ -50,10 +51,15 @@ func TestServer(t *testing.T) {
 	}
 	defer clientConn.Close()
 
-	message := "Mensaje de prueba"
-	_, err = clientConn.Write([]byte(message))
-	if err != err {
-		t.Fatalf("Error al enviar mensaje al servidor: %v", err)
+	// Leer el archivo RIP
+	ripMessage, err := ioutil.ReadFile("../rip_message.bin")
+	if err != nil {
+		t.Fatalf("Error reading RIP message: %v", err)
+	}
+
+	_, err = clientConn.Write(ripMessage)
+	if err != nil {
+		t.Fatalf("Error al enviar mensaje RIP al servidor: %v", err)
 	}
 
 	reply := make([]byte, 1024)
