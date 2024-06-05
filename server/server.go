@@ -3,34 +3,30 @@ package main
 import (
 	"fmt"
 	"net"
-	"os"
 )
 
 func main() {
-	conn, err := net.ListenPacket("udp", ":8080")
+	addr := net.UDPAddr{
+		Port: 8080,
+		IP:   net.ParseIP("10.1.1.1"),
+	}
+
+	conn, err := net.ListenUDP("udp", &addr)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Printf("Error: %s\n", err)
+		return
 	}
 	defer conn.Close()
-	fmt.Println("Servidor escuchando en el puerto 8080")
+	fmt.Println("UDP server listening on 10.1.1.1:8080")
 
 	buffer := make([]byte, 1024)
 	for {
-		n, addr, err := conn.ReadFrom(buffer)
+		n, clientAddr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Error: %s\n", err)
 			continue
 		}
-		fmt.Println("Cliente conectado")
-
-		_, err = conn.WriteTo([]byte("Hola desde el servidor"), addr)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		fmt.Printf("Mensaje RIP recibido en hexadecimal: % X\n", buffer[:n])
-		fmt.Printf("Mensaje RIP recibido en octetos: %v\n", buffer[:n])
+		fmt.Printf("Received '%s' from %s\n", string(buffer[:n]), clientAddr)
+		conn.WriteToUDP([]byte("Hello from server"), clientAddr)
 	}
 }
