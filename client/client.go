@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"time"
-	// Ajusta esta ruta según tu estructura de proyecto
+
+	"reseaux/utils" // Ajusta esta ruta según tu estructura de proyecto
 )
 
 func main() {
@@ -17,36 +19,37 @@ func startClient(port string) {
 
 	conn, err := net.Dial("udp", "localhost:"+port)
 	if err != nil {
-		fmt.Println("Error connecting:", err.Error())
+		log.Fatalf("Error connecting: %v", err)
 		return
 	}
 	defer conn.Close()
 
-	ripMessage, err := generateRIPMessage([]string{
-		"data/routeur-client.yaml",
-		"data/routeur-r1.yaml",
-		"data/routeur-r2.yaml",
-		"data/routeur-r3.yaml",
-		"data/routeur-r4.yaml",
-		"data/routeur-r5.yaml",
-		"data/routeur-r6.yaml",
-		"data/routeur-serveur.yaml",
-	})
+	files := []string{
+		"../data/routeur-client.yaml",
+		"../data/routeur-r1.yaml",
+		"../data/routeur-r2.yaml",
+		"../data/routeur-r3.yaml",
+		"../data/routeur-r4.yaml",
+		"../data/routeur-r5.yaml",
+		"../data/routeur-r6.yaml",
+		"../data/routeur-serveur.yaml",
+	}
+
+	ripMessage, err := utils.GenerateRIPMessage(files)
 	if err != nil {
-		fmt.Println("Error generating RIP message:", err.Error())
-		return
+		log.Fatalf("Error generating RIP message: %v", err)
 	}
 
 	_, err = conn.Write(ripMessage)
 	if err != nil {
-		fmt.Println("Error writing:", err.Error())
+		log.Fatalf("Error writing: %v", err)
 		return
 	}
 
 	reply := make([]byte, 1024)
 	n, err := conn.Read(reply)
 	if err != nil {
-		fmt.Println("Error reading:", err.Error())
+		log.Fatalf("Error reading: %v", err)
 		return
 	}
 

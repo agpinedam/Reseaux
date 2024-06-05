@@ -6,7 +6,8 @@ import (
 	"net"
 	"testing"
 	"time"
-	// Ajusta esta ruta según tu estructura de proyecto
+
+	"reseaux/utils" // Ajusta esta ruta según tu estructura de proyecto
 )
 
 func startTestServer(t *testing.T) (net.PacketConn, int) {
@@ -51,33 +52,35 @@ func TestServer(t *testing.T) {
 	}
 	defer clientConn.Close()
 
-	ripMessage, err := generateRIPMessage([]string{
-		"data/routeur-client.yaml",
-		"data/routeur-r1.yaml",
-		"data/routeur-r2.yaml",
-		"data/routeur-r3.yaml",
-		"data/routeur-r4.yaml",
-		"data/routeur-r5.yaml",
-		"data/routeur-r6.yaml",
-		"data/routeur-serveur.yaml",
-	})
+	files := []string{
+		"../data/routeur-client.yaml",
+		"../data/routeur-r1.yaml",
+		"../data/routeur-r2.yaml",
+		"../data/routeur-r3.yaml",
+		"../data/routeur-r4.yaml",
+		"../data/routeur-r5.yaml",
+		"../data/routeur-r6.yaml",
+		"../data/routeur-serveur.yaml",
+	}
+
+	ripMessage, err := utils.GenerateRIPMessage(files)
 	if err != nil {
-		t.Fatalf("Error generating RIP message: %v", err)
+		t.Fatalf("Error generando el mensaje RIP: %v", err)
 	}
 
 	_, err = clientConn.Write(ripMessage)
 	if err != nil {
-		t.Fatalf("Error al enviar mensaje RIP al servidor: %v", err)
+		t.Fatalf("Error enviando el mensaje RIP: %v", err)
 	}
 
 	reply := make([]byte, 1024)
 	n, err := bufio.NewReader(clientConn).Read(reply)
 	if err != nil {
-		t.Fatalf("Error al leer la respuesta del servidor: %v", err)
+		t.Fatalf("Error leyendo la respuesta: %v", err)
 	}
 
-	expectedMessage := "Hola desde el servidor"
-	if string(reply[:n]) != expectedMessage {
-		t.Errorf("Mensaje esperado: %s, pero se recibió: %s", expectedMessage, string(reply[:n]))
+	expectedResponse := "Hola desde el servidor"
+	if string(reply[:n]) != expectedResponse {
+		t.Errorf("Respuesta esperada: %s, pero se recibió: %s", expectedResponse, string(reply[:n]))
 	}
 }
