@@ -22,8 +22,6 @@ func main() {
 	fmt.Println("UDP server listening on 10.1.1.3:520")
 
 	buffer := make([]byte, 1024)
-	receivedTable := false
-
 	for {
 		n, clientAddr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
@@ -31,15 +29,12 @@ func main() {
 			continue
 		}
 
-		if !receivedTable {
-			var msg rip.RIPMessage
-			if err := msg.UnmarshalBinary(buffer[:n]); err != nil {
-				fmt.Printf("Error: %s\n", err)
-				continue
-			}
-
-			fmt.Printf("Received RIP table from client %s: %+v\n", clientAddr, msg)
-			receivedTable = true
+		var msg rip.RIPMessage
+		if err := msg.UnmarshalBinary(buffer[:n]); err != nil {
+			fmt.Printf("Error: %s\n", err)
+			continue
 		}
+
+		fmt.Printf("Received RIP table from client %s: %+v\n", clientAddr, msg)
 	}
 }

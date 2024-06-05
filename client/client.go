@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"reseaux/rip"
 )
@@ -21,20 +22,25 @@ func main() {
 	}
 	defer conn.Close()
 
-	// Construir y enviar la tabla de enrutamiento RIP al servidor
-	var msg rip.RIPMessage
-	// Aquí debes construir la tabla de enrutamiento RIP y agregarla al mensaje RIP
-	data, err := msg.MarshalBinary()
-	if err != nil {
-		fmt.Printf("Error: %s\n", err)
-		return
-	}
+	for {
+		// Construir y enviar la tabla de enrutamiento RIP al servidor
+		var msg rip.RIPMessage
+		// Aquí debes construir la tabla de enrutamiento RIP y agregarla al mensaje RIP
+		data, err := msg.MarshalBinary()
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			return
+		}
 
-	_, err = conn.Write(data)
-	if err != nil {
-		fmt.Printf("Error: %s\n", err)
-		return
-	}
+		_, err = conn.Write(data)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			return
+		}
 
-	fmt.Println("Sent RIP table to server")
+		fmt.Println("Sent RIP table to server")
+
+		// Esperar un momento antes de enviar la tabla nuevamente
+		time.Sleep(time.Second * 30)
+	}
 }
