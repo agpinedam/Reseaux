@@ -26,7 +26,7 @@ func main() {
 
 	for {
 		// Leer la configuración del router desde el archivo YAML
-		routerConfigPath := "../data/routeur-r1.yaml"
+		routerConfigPath := "../data/routeur-r2.yaml"
 		r, err := router.NewRouterFromFile(routerConfigPath)
 		if err != nil {
 			fmt.Printf("Error loading router configuration: %v\n", err)
