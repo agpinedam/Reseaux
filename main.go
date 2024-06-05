@@ -1,27 +1,25 @@
-// En el archivo main.go
 package main
 
 import (
 	"fmt"
 	"log"
+	"net"
 
 	"reseaux/router"
+	"reseaux/table"
 )
 
 func main() {
-	// Leer el archivo YAML del router
-	routerFilePath := "data/routeur-r1.yaml"
-	r, err := router.NewRouterFromFile(routerFilePath)
+	routerConfigPath := "data/routeur-r1.yaml"
+	r, err := router.NewRouterFromFile(routerConfigPath)
 	if err != nil {
-		log.Fatalf("Error al leer el archivo del router: %v", err)
+		log.Fatalf("Failed to load router configuration: %v", err)
 	}
 
-	// Construir la tabla de rutas
-	routeTable := router.BuildRouteTable(r)
+	routeTable := table.BuildRouteTable(r)
 
-	// Imprimir la tabla de rutas
-	fmt.Println("Tabla de rutas:")
-	for _, route := range routeTable.Routes {
-		fmt.Printf("Dispositivo: %s, IP: %s, Máscara: %s\n", route.Device, route.IP, route.Mask)
+	fmt.Println("Router Interfaces:")
+	for _, iface := range routeTable.Routes {
+		fmt.Printf("Device: %s, IP: %s, Mask: %s\n", iface.Device, iface.IP, net.IP(iface.Mask))
 	}
 }

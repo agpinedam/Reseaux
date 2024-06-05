@@ -1,4 +1,3 @@
-// En el archivo router/router_table.go
 package router
 
 type RouteTable struct {
@@ -6,11 +5,8 @@ type RouteTable struct {
 }
 
 func BuildRouteTable(r *Router) *RouteTable {
-	routeTable := &RouteTable{}
-
-	for _, iface := range r.Interfaces {
-		// Build routes for each interface
-		routeTable.Routes = append(routeTable.Routes, iface)
+	routeTable := &RouteTable{
+		Routes: r.Interfaces,
 	}
 
 	return routeTable
