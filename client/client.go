@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"time"
+	// Ajusta esta ruta según tu estructura de proyecto
 )
 
 func main() {
@@ -22,9 +22,18 @@ func startClient(port string) {
 	}
 	defer conn.Close()
 
-	ripMessage, err := ioutil.ReadFile("rip_message.bin")
+	ripMessage, err := generateRIPMessage([]string{
+		"data/routeur-client.yaml",
+		"data/routeur-r1.yaml",
+		"data/routeur-r2.yaml",
+		"data/routeur-r3.yaml",
+		"data/routeur-r4.yaml",
+		"data/routeur-r5.yaml",
+		"data/routeur-r6.yaml",
+		"data/routeur-serveur.yaml",
+	})
 	if err != nil {
-		fmt.Println("Error reading RIP message:", err.Error())
+		fmt.Println("Error generating RIP message:", err.Error())
 		return
 	}
 

@@ -4,21 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
-	"path/filepath"
-	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"reseaux/utils" // Ajusta esta ruta según tu estructura de proyecto
 )
-
-type Interfaz struct {
-	Dispositivo string `yaml:"device"`
-	IP          string `yaml:"ip"`
-	Mascara     string `yaml:"mask"`
-}
 
 func ipToBytes(ip string) []byte {
 	parsedIP := net.ParseIP(ip).To4()
@@ -53,7 +44,7 @@ func calculateNetworkAddress(ip, mask string) string {
 	return fmt.Sprintf("%d.%d.%d.%d", network[0], network[1], network[2], network[3])
 }
 
-func printRIPFormat(interfaces []struct{ Interface Interfaz }, routerName string) {
+func printRIPFormat(interfaces []struct{ Interface utils.Interfaz }, routerName string) {
 	fmt.Printf("# Table de routage RIP - %s\n", routerName)
 	fmt.Printf("# Generated on %s\n", time.Now().Format("2006-01-02 15:04 MST"))
 	fmt.Println()
@@ -69,6 +60,32 @@ func printRIPFormat(interfaces []struct{ Interface Interfaz }, routerName string
 	fmt.Println("# Fin de la table de routage.")
 }
 
+func generateRIPMessage(files []string) ([]byte, error) {
+	dataMap, err := utils.ReadYAMLFiles(files)
+	if err != nil {
+		return nil, err
+	}
+
+	var buffer bytes.Buffer
+	buffer.WriteByte(2)        // Comando: Respuesta
+	buffer.WriteByte(2)        // Versión: RIP v2
+	buffer.Write([]byte{0, 0}) // Dominio de enrutamiento: 0
+
+	for routerName, interfaces := range dataMap {
+		printRIPFormat(interfaces, routerName)
+
+		for _, interfaz := range interfaces {
+			buffer.Write([]byte{0, 2})
+			buffer.Write([]byte{0, 0})
+			buffer.Write(ipToBytes(calculateNetworkAddress(interfaz.Interface.IP, interfaz.Interface.Mascara)))
+			buffer.Write(maskToBytes(interfaz.Interface.Mascara))
+			buffer.Write(ipToBytes("0.0.0.0"))
+			buffer.Write([]byte{0, 0, 0, 1})
+		}
+	}
+	return buffer.Bytes(), nil
+}
+
 func main() {
 	files := []string{
 		"data/routeur-client.yaml",
@@ -81,41 +98,29 @@ func main() {
 		"data/routeur-serveur.yaml",
 	}
 
-	var buffer bytes.Buffer
-	buffer.WriteByte(2)
-	buffer.WriteByte(2)
-	buffer.Write([]byte{0, 0})
-
-	for _, file := range files {
-		data, err := ioutil.ReadFile(file)
-		if err != nil {
-			log.Fatalf("Error al leer el archivo %s: %v", file, err)
-		}
-
-		var interfaces []struct{ Interface Interfaz }
-		err = yaml.Unmarshal(data, &interfaces)
-		if err != nil {
-			log.Fatalf("Error al deserializar el archivo %s: %v", file, err)
-		}
-
-		routerName := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
-
-		printRIPFormat(interfaces, routerName)
-
-		for _, interfaz := range interfaces {
-			buffer.Write([]byte{0, 2})
-			buffer.Write([]byte{0, 0})
-			buffer.Write(ipToBytes(calculateNetworkAddress(interfaz.Interface.IP, interfaz.Interface.Mascara)))
-			buffer.Write(maskToBytes(interfaz.Interface.Mascara))
-			buffer.Write(ipToBytes("0.0.0.0"))
-			buffer.Write([]byte{0, 0, 0, 1})
-		}
-	}
-
-	err := ioutil.WriteFile("rip_message.bin", buffer.Bytes(), 0644)
+	ripMessage, err := generateRIPMessage(files)
 	if err != nil {
-		log.Fatalf("Error al escribir el archivo RIP: %v", err)
+		log.Fatalf("Error al generar el mensaje RIP: %v", err)
 	}
 
-	fmt.Println("Archivo RIP generado correctamente: rip_message.bin")
+	err = sendRIPMessage(ripMessage, "localhost:8080")
+	if err != nil {
+		log.Fatalf("Error al enviar el mensaje RIP: %v", err)
+	}
+
+	fmt.Println("Mensaje RIP enviado correctamente")
+}
+
+func sendRIPMessage(message []byte, address string) error {
+	conn, err := net.Dial("udp", address)
+	if err != nil {
+		return fmt.Errorf("error conectando al servidor: %v", err)
+	}
+	defer conn.Close()
+
+	_, err = conn.Write(message)
+	if err != nil {
+		return fmt.Errorf("error enviando el mensaje: %v", err)
+	}
+	return nil
 }

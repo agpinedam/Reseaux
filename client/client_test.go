@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"testing"
 	"time"
+	// Ajusta esta ruta según tu estructura de proyecto
 )
 
 func startTestServer(t *testing.T) (net.PacketConn, int) {
@@ -51,10 +51,18 @@ func TestServer(t *testing.T) {
 	}
 	defer clientConn.Close()
 
-	// Leer el archivo RIP
-	ripMessage, err := ioutil.ReadFile("../rip_message.bin")
+	ripMessage, err := generateRIPMessage([]string{
+		"data/routeur-client.yaml",
+		"data/routeur-r1.yaml",
+		"data/routeur-r2.yaml",
+		"data/routeur-r3.yaml",
+		"data/routeur-r4.yaml",
+		"data/routeur-r5.yaml",
+		"data/routeur-r6.yaml",
+		"data/routeur-serveur.yaml",
+	})
 	if err != nil {
-		t.Fatalf("Error reading RIP message: %v", err)
+		t.Fatalf("Error generating RIP message: %v", err)
 	}
 
 	_, err = clientConn.Write(ripMessage)
