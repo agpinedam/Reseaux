@@ -2,56 +2,29 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
-	"time"
-
-	"reseaux/utils" // Ajusta esta ruta según tu estructura de proyecto
+	"os"
 )
 
 func main() {
-	port := "8080"
-	startClient(port)
-}
+	broadcastAddr := &net.UDPAddr{
+		IP:   net.ParseIP("10.1.1.3"), // Dirección de broadcast para la red local
+		Port: 8080,
+	}
 
-func startClient(port string) {
-	time.Sleep(2 * time.Second)
-
-	conn, err := net.Dial("udp", "localhost:"+port)
+	conn, err := net.DialUDP("udp", nil, broadcastAddr)
 	if err != nil {
-		log.Fatalf("Error connecting: %v", err)
-		return
+		fmt.Printf("Error: %s\n", err)
+		os.Exit(1)
 	}
 	defer conn.Close()
 
-	files := []string{
-		"../data/routeur-client.yaml",
-		"../data/routeur-r1.yaml",
-		"../data/routeur-r2.yaml",
-		"../data/routeur-r3.yaml",
-		"../data/routeur-r4.yaml",
-		"../data/routeur-r5.yaml",
-		"../data/routeur-r6.yaml",
-		"../data/routeur-serveur.yaml",
-	}
-
-	ripMessage, err := utils.GenerateRIPMessage(files)
+	message := []byte("Hello from client")
+	_, err = conn.Write(message)
 	if err != nil {
-		log.Fatalf("Error generating RIP message: %v", err)
-	}
-
-	_, err = conn.Write(ripMessage)
-	if err != nil {
-		log.Fatalf("Error writing: %v", err)
+		fmt.Printf("Error: %s\n", err)
 		return
 	}
 
-	reply := make([]byte, 1024)
-	n, err := conn.Read(reply)
-	if err != nil {
-		log.Fatalf("Error reading: %v", err)
-		return
-	}
-
-	fmt.Println("Server says:", string(reply[:n]))
+	fmt.Println("Message sent to broadcast address")
 }
