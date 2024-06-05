@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"reseaux/rip"
 )
 
 func main() {
 	broadcastAddr := &net.UDPAddr{
 		IP:   net.ParseIP("10.1.1.3"), // Dirección de broadcast para la red local
-		Port: 8080,
+		Port: rip.RIPPort,
 	}
 
 	conn, err := net.DialUDP("udp", nil, broadcastAddr)
@@ -19,12 +21,20 @@ func main() {
 	}
 	defer conn.Close()
 
-	message := []byte("Hello from client")
-	_, err = conn.Write(message)
+	// Construir y enviar la tabla de enrutamiento RIP al servidor
+	var msg rip.RIPMessage
+	// Aquí debes construir la tabla de enrutamiento RIP y agregarla al mensaje RIP
+	data, err := msg.MarshalBinary()
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
 
-	fmt.Println("Message sent to broadcast address")
+	_, err = conn.Write(data)
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+
+	fmt.Println("Sent RIP table to server")
 }

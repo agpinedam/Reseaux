@@ -8,8 +8,20 @@ import (
 )
 
 func TestBuildRouteTable(t *testing.T) {
-	// Definimos las interfaces del router para la prueba
-	interfaces := []router.Interface{
+	// Ruta al archivo YAML de prueba
+	routerConfigPath := "../data/routeur-r1.yaml"
+
+	// Cargamos el router desde el archivo YAML
+	r, err := router.NewRouterFromFile(routerConfigPath)
+	if err != nil {
+		t.Fatalf("Failed to load router configuration: %v", err)
+	}
+
+	// Construimos la tabla de rutas usando la función BuildRouteTable
+	routeTable := BuildRouteTable(r)
+
+	// Definimos las interfaces esperadas
+	expectedInterfaces := []router.Interface{
 		{
 			Device: "eth0",
 			IP:     net.ParseIP("192.168.1.254"),
@@ -22,23 +34,16 @@ func TestBuildRouteTable(t *testing.T) {
 		},
 	}
 
-	// Creamos una instancia del router con las interfaces definidas
-	r := &router.Router{
-		Interfaces: interfaces,
-	}
-
-	// Construimos la tabla de rutas usando la función BuildRouteTable
-	routeTable := BuildRouteTable(r)
-
 	// Verificamos que la tabla de rutas tenga el mismo número de interfaces
-	if len(routeTable.Routes) != len(interfaces) {
-		t.Fatalf("Expected %d routes, but got %d", len(interfaces), len(routeTable.Routes))
+	if len(routeTable.Routes) != len(expectedInterfaces) {
+		t.Fatalf("Expected %d routes, but got %d", len(expectedInterfaces), len(routeTable.Routes))
 	}
 
-	// Verificamos que cada interfaz en la tabla de rutas coincida con la configuración original
+	// Verificamos que cada interfaz en la tabla de rutas coincida con la configuración esperada
 	for i, iface := range routeTable.Routes {
-		if iface.Device != interfaces[i].Device || !iface.IP.Equal(interfaces[i].IP) || iface.Mask.String() != interfaces[i].Mask.String() {
-			t.Errorf("Route %d does not match: expected %v, but got %v", i, interfaces[i], iface)
+		expectedIface := expectedInterfaces[i]
+		if iface.Device != expectedIface.Device || !iface.IP.Equal(expectedIface.IP) || iface.Mask.String() != expectedIface.Mask.String() {
+			t.Errorf("Route %d does not match: expected %v, but got %v", i, expectedIface, iface)
 		}
 	}
 }

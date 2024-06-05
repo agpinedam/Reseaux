@@ -36,4 +36,7 @@ func main() {
 		network := calculateNetwork(iface.IP, iface.Mask)
 		fmt.Printf("%s | %s | - | %s | 1\n", network, net.IP(iface.Mask).String(), iface.IP.String())
 	}
+
+	// Elimina o comenta esta línea si no deseas mantener el programa corriendo
+	// select {}
 }
