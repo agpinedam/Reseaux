@@ -6,6 +6,12 @@ import (
 	"reseaux/rip"
 	"reseaux/router"
 	"reseaux/table"
+	"sync"
+)
+
+var (
+	routeTableLock sync.Mutex
+	receivedTables = make(map[string]struct{})
 )
 
 func main() {
@@ -48,6 +54,19 @@ func main() {
 			continue
 		}
 
+		tableID := fmt.Sprintf("%s:%d", clientAddr.IP, clientAddr.Port)
+
+		// Verificar si ya se ha recibido esta tabla antes
+		routeTableLock.Lock()
+		_, ok := receivedTables[tableID]
+		if ok {
+			routeTableLock.Unlock()
+			fmt.Println("Duplicate table received from client, skipping...")
+			continue
+		}
+		receivedTables[tableID] = struct{}{}
+		routeTableLock.Unlock()
+
 		fmt.Printf("Received RIP table from client %s: %+v\n", clientAddr, msg)
 
 		// Crear una nueva tabla de enrutamiento desde el mensaje RIP recibido
@@ -60,7 +79,9 @@ func main() {
 		mergedRouteTable.RecalculateMetrics()
 
 		// Actualizar la tabla de enrutamiento del servidor con la tabla fusionada
+		routeTableLock.Lock()
 		routeTable = mergedRouteTable
+		routeTableLock.Unlock()
 
 		fmt.Printf("Merged routing table: %+v\n", routeTable)
 	}
