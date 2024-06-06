@@ -5,6 +5,8 @@ import (
 	"net"
 
 	"reseaux/rip"
+	"reseaux/router"
+	"reseaux/table"
 )
 
 func main() {
@@ -20,6 +22,18 @@ func main() {
 	}
 	defer conn.Close()
 	fmt.Println("UDP server listening on 10.1.1.3:520")
+
+	// Leer la configuración del router desde el archivo YAML
+	routerConfigPath := "../data/routeur-r1.yaml"
+	r, err := router.NewRouterFromFile(routerConfigPath)
+	if err != nil {
+		fmt.Printf("Error loading router configuration: %v\n", err)
+		return
+	}
+
+	// Construir la tabla de enrutamiento desde la configuración del router
+	routeTable := table.BuildRouteTable(r)
+	fmt.Printf("Server routing table: %+v\n", routeTable)
 
 	buffer := make([]byte, 1024)
 	for {
