@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-
 	"reseaux/rip"
 	"reseaux/router"
 	"reseaux/table"

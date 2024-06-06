@@ -45,7 +45,7 @@ func main() {
 		for _, iface := range routeTable.Routes {
 			entry := rip.RIPEntity{
 				AddressFamilyIdentifier: 2, // IPv4
-				IPAddress:               iface.IP,
+				IPAddress:               iface.IP.Mask(iface.Mask),
 				SubnetMask:              net.IP(iface.Mask),
 				NextHop:                 net.ParseIP("10.1.1.3"), // Dirección del servidor
 				Metric:                  uint32(iface.Metric),    // Métrica inicial
@@ -70,4 +70,5 @@ func main() {
 		// Esperar un momento antes de enviar la tabla nuevamente
 		time.Sleep(time.Second * 30)
 	}
+
 }
