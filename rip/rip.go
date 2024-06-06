@@ -2,65 +2,77 @@ package rip
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net"
 )
 
 const (
+	// RIPPort es el puerto UDP estándar para el protocolo RIP
 	RIPPort = 520
 )
 
+// RIPMessage representa un mensaje RIP.
 type RIPMessage struct {
-	Command uint8
-	Version uint8
-	Zero    uint16
-	Entries []RIPEntity
+	Command byte        // Comando RIP (1 para respuesta, 2 para solicitud)
+	Version byte        // Versión del protocolo RIP
+	Zero    uint16      // Campo de relleno
+	Entries []RIPEntity // Entradas de la tabla de enrutamiento RIP
 }
 
+// RIPEntity representa una entrada de la tabla de enrutamiento RIP.
 type RIPEntity struct {
-	AddressFamilyIdentifier uint16
-	RouteTag                uint16
-	IPAddress               net.IP
-	SubnetMask              net.IP
-	NextHop                 net.IP
-	Metric                  uint32
+	AddressFamilyIdentifier uint16 // Identificador de la familia de direcciones (siempre 2 para IPv4)
+	RouteTag                uint16 // Etiqueta de ruta (siempre 0)
+	IPAddress               net.IP // Dirección IP de destino
+	SubnetMask              net.IP // Máscara de subred
+	NextHop                 net.IP // Próximo salto
+	Metric                  uint32 // Métrica asociada a la ruta
 }
 
+// MarshalBinary codifica el mensaje RIP en formato binario.
 func (msg *RIPMessage) MarshalBinary() ([]byte, error) {
-	buffer := make([]byte, 4) // Encabezado RIP tiene 4 bytes
-	buffer[0] = msg.Command
-	buffer[1] = msg.Version
-	binary.BigEndian.PutUint16(buffer[2:], msg.Zero)
+	buf := make([]byte, 4+len(msg.Entries)*20)
 
+	buf[0] = msg.Command
+	buf[1] = msg.Version
+	binary.BigEndian.PutUint16(buf[2:], msg.Zero)
+
+	offset := 4
 	for _, entry := range msg.Entries {
-		entryBytes := make([]byte, 20) // Cada entrada RIP tiene 20 bytes
-		binary.BigEndian.PutUint16(entryBytes[:], entry.AddressFamilyIdentifier)
-		binary.BigEndian.PutUint16(entryBytes[2:], entry.RouteTag)
-		copy(entryBytes[4:], entry.IPAddress.To4())
-		copy(entryBytes[8:], entry.SubnetMask.To4())
-		copy(entryBytes[12:], entry.NextHop.To4())
-		binary.BigEndian.PutUint32(entryBytes[16:], entry.Metric)
-		buffer = append(buffer, entryBytes...)
+		binary.BigEndian.PutUint16(buf[offset:], entry.AddressFamilyIdentifier)
+		binary.BigEndian.PutUint16(buf[offset+2:], entry.RouteTag)
+		copy(buf[offset+4:offset+8], entry.IPAddress.To4())
+		copy(buf[offset+8:offset+12], entry.SubnetMask)
+		copy(buf[offset+12:offset+16], entry.NextHop.To4())
+		binary.BigEndian.PutUint32(buf[offset+16:], entry.Metric)
+		offset += 20
 	}
 
-	return buffer, nil
+	return buf, nil
 }
 
+// UnmarshalBinary decodifica el mensaje RIP binario en la estructura de mensaje RIP.
 func (msg *RIPMessage) UnmarshalBinary(data []byte) error {
+	if len(data) < 4 {
+		return fmt.Errorf("mensaje RIP demasiado corto")
+	}
+
 	msg.Command = data[0]
 	msg.Version = data[1]
 	msg.Zero = binary.BigEndian.Uint16(data[2:4])
 
-	data = data[4:]
-	for len(data) >= 20 {
-		var entry RIPEntity
-		entry.AddressFamilyIdentifier = binary.BigEndian.Uint16(data[:2])
-		entry.RouteTag = binary.BigEndian.Uint16(data[2:4])
-		entry.IPAddress = net.IP(data[4:8])
-		entry.SubnetMask = net.IP(data[8:12])
-		entry.NextHop = net.IP(data[12:16])
-		entry.Metric = binary.BigEndian.Uint32(data[16:20])
-		msg.Entries = append(msg.Entries, entry)
-		data = data[20:]
+	entriesLen := (len(data) - 4) / 20
+	msg.Entries = make([]RIPEntity, entriesLen)
+
+	offset := 4
+	for i := 0; i < entriesLen; i++ {
+		msg.Entries[i].AddressFamilyIdentifier = binary.BigEndian.Uint16(data[offset:])
+		msg.Entries[i].RouteTag = binary.BigEndian.Uint16(data[offset+2:])
+		msg.Entries[i].IPAddress = net.IP(data[offset+4 : offset+8])
+		msg.Entries[i].SubnetMask = net.IP(data[offset+8 : offset+12])
+		msg.Entries[i].NextHop = net.IP(data[offset+12 : offset+16])
+		msg.Entries[i].Metric = binary.BigEndian.Uint32(data[offset+16 : offset+20])
+		offset += 20
 	}
 
 	return nil

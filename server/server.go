@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Construir la tabla de enrutamiento desde la configuración del router
-	routeTable := table.BuildRouteTable(r)
+	routeTable := table.NewRouteTableFromRouter(r)
 	fmt.Printf("Server routing table: %+v\n", routeTable)
 
 	buffer := make([]byte, 1024)
@@ -50,5 +50,19 @@ func main() {
 		}
 
 		fmt.Printf("Received RIP table from client %s: %+v\n", clientAddr, msg)
+
+		// Crear una nueva tabla de enrutamiento desde el mensaje RIP recibido
+		newRouteTable := table.BuildRouteTableFromRIPMessage(&msg)
+
+		// Fusionar la nueva tabla con la tabla existente
+		mergedRouteTable := routeTable.MergeRouteTable(newRouteTable)
+
+		// Recalcular las métricas en la tabla fusionada
+		mergedRouteTable.RecalculateMetrics()
+
+		// Actualizar la tabla de enrutamiento del servidor con la tabla fusionada
+		routeTable = mergedRouteTable
+
+		fmt.Printf("Merged routing table: %+v\n", routeTable)
 	}
 }

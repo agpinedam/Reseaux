@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// Construir la tabla de enrutamiento desde la configuración del router
-	routeTable := table.BuildRouteTable(r)
+	routeTable := table.NewRouteTableFromRouter(r)
 
 	for {
 		// Construir y enviar el mensaje RIP con la tabla de enrutamiento al servidor
@@ -47,7 +47,7 @@ func main() {
 				AddressFamilyIdentifier: 2, // IPv4
 				IPAddress:               iface.IP,
 				SubnetMask:              net.IP(iface.Mask),
-				Metric:                  1, // Métrica inicial
+				Metric:                  uint32(iface.Metric), // Métrica inicial
 			}
 			msg.Entries = append(msg.Entries, entry)
 		}

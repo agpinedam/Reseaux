@@ -16,6 +16,7 @@ type Interface struct {
 	Device string `yaml:"device"`
 	IP     net.IP `yaml:"ip"`
 	Mask   net.IPMask
+	Metric int // Agrega el campo para la métrica
 }
 
 type rawInterface struct {
