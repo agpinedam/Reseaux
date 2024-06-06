@@ -47,7 +47,8 @@ func main() {
 				AddressFamilyIdentifier: 2, // IPv4
 				IPAddress:               iface.IP,
 				SubnetMask:              net.IP(iface.Mask),
-				Metric:                  uint32(iface.Metric), // Métrica inicial
+				NextHop:                 net.ParseIP("10.1.1.3"), // Dirección del servidor
+				Metric:                  uint32(iface.Metric),    // Métrica inicial
 			}
 			msg.Entries = append(msg.Entries, entry)
 		}
