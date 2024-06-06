@@ -58,10 +58,8 @@ func main() {
 
 		// Verificar si ya se ha recibido esta tabla antes
 		routeTableLock.Lock()
-		_, ok := receivedTables[tableID]
-		if ok {
+		if _, ok := receivedTables[tableID]; ok {
 			routeTableLock.Unlock()
-			fmt.Println("Duplicate table received from client, skipping...")
 			continue
 		}
 		receivedTables[tableID] = struct{}{}
@@ -69,18 +67,12 @@ func main() {
 
 		fmt.Printf("Received RIP table from client %s: %+v\n", clientAddr, msg)
 
-		// Crear una nueva tabla de enrutamiento desde el mensaje RIP recibido
-		newRouteTable := table.BuildRouteTableFromRIPMessage(&msg)
+		// Construir la tabla de enrutamiento desde el mensaje RIP recibido
+		receivedRouteTable := table.BuildRouteTableFromRIPMessage(&msg)
 
-		// Fusionar la nueva tabla con la tabla existente
-		mergedRouteTable := routeTable.MergeRouteTable(newRouteTable)
-
-		// Recalcular las métricas en la tabla fusionada
-		mergedRouteTable.RecalculateMetrics()
-
-		// Actualizar la tabla de enrutamiento del servidor con la tabla fusionada
+		// Fusionar la tabla de enrutamiento recibida con la tabla del servidor
 		routeTableLock.Lock()
-		routeTable = mergedRouteTable
+		routeTable = routeTable.MergeRouteTable(receivedRouteTable)
 		routeTableLock.Unlock()
 
 		fmt.Printf("Merged routing table: %+v\n", routeTable)

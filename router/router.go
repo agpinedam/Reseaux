@@ -50,6 +50,7 @@ func NewRouterFromFile(filePath string) (*Router, error) {
 			Device: rawIface.Device,
 			IP:     ip,
 			Mask:   mask,
+			Metric: 1, // Inicializa la métrica en 1
 		}
 		interfaces = append(interfaces, iface)
 	}
