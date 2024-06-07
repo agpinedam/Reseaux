@@ -13,61 +13,61 @@ import (
 
 func main() {
 	serverAddr := &net.UDPAddr{
-		IP:   net.ParseIP("10.1.1.3"), // Dirección del servidor
+		IP:   net.ParseIP("10.1.1.3"), // Adresse du serveur
 		Port: rip.RIPPort,
 	}
 
 	conn, err := net.DialUDP("udp", nil, serverAddr)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
+		fmt.Printf("Erreur : %s\n", err)
 		os.Exit(1)
 	}
 	defer conn.Close()
 
-	// Leer la configuración del router desde el archivo YAML
-	routerConfigPath := "../data/routeur-r2.yaml"
-	r, err := router.NewRouterFromFile(routerConfigPath)
+	// Lire la configuration du routeur depuis le fichier YAML
+	cheminConfigRouteur := "../data/routeur-r2.yaml"
+	r, err := router.NewRouterFromFile(cheminConfigRouteur)
 	if err != nil {
-		fmt.Printf("Error loading router configuration: %v\n", err)
+		fmt.Printf("Erreur lors du chargement de la configuration du routeur : %v\n", err)
 		return
 	}
 
-	// Construir la tabla de enrutamiento desde la configuración del router
+	// Construire la table de routage à partir de la configuration du routeur
 	routeTable := table.NewRouteTableFromRouter(r)
 
 	for {
-		// Construir y enviar el mensaje RIP con la tabla de enrutamiento al servidor
+		// Construire et envoyer le message RIP avec la table de routage au serveur
 		var msg rip.RIPMessage
-		msg.Command = 1 // Define el comando RIP como "response"
-		msg.Version = 2 // Define la versión del protocolo RIP
+		msg.Command = 1 // Définir la commande RIP comme "réponse"
+		msg.Version = 2 // Définir la version du protocole RIP
 
-		// Agregar cada entrada de la tabla de enrutamiento a la estructura del mensaje RIP
+		// Ajouter chaque entrée de la table de routage à la structure du message RIP
 		for _, iface := range routeTable.Routes {
 			entry := rip.RIPEntity{
 				AddressFamilyIdentifier: 2, // IPv4
 				IPAddress:               iface.IP.Mask(iface.Mask),
 				SubnetMask:              net.IP(iface.Mask),
-				NextHop:                 net.ParseIP("10.1.1.3"), // Dirección del servidor
-				Metric:                  uint32(iface.Metric),    // Métrica inicial
+				NextHop:                 net.ParseIP("10.1.1.3"), // Adresse du serveur
+				Metric:                  uint32(iface.Metric),    // Métrique initiale
 			}
 			msg.Entries = append(msg.Entries, entry)
 		}
 
 		data, err := msg.MarshalBinary()
 		if err != nil {
-			fmt.Printf("Error: %s\n", err)
+			fmt.Printf("Erreur : %s\n", err)
 			return
 		}
 
 		_, err = conn.Write(data)
 		if err != nil {
-			fmt.Printf("Error: %s\n", err)
+			fmt.Printf("Erreur : %s\n", err)
 			return
 		}
 
-		fmt.Println("Sent RIP table to server")
+		fmt.Println("Table RIP envoyée au serveur")
 
-		// Esperar un momento antes de enviar la tabla nuevamente
+		// Attendre un moment avant d'envoyer la table à nouveau
 		time.Sleep(time.Second * 30)
 	}
 

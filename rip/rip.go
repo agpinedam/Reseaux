@@ -7,29 +7,29 @@ import (
 )
 
 const (
-	// RIPPort es el puerto UDP estándar para el protocolo RIP
+	// RIPPort est le port UDP standard pour le protocole RIP
 	RIPPort = 520
 )
 
-// RIPMessage representa un mensaje RIP.
+// RIPMessage représente un message RIP.
 type RIPMessage struct {
-	Command byte        // Comando RIP (1 para respuesta, 2 para solicitud)
-	Version byte        // Versión del protocolo RIP
-	Zero    uint16      // Campo de relleno
-	Entries []RIPEntity // Entradas de la tabla de enrutamiento RIP
+	Command byte        // Commande RIP (1 pour réponse, 2 pour demande)
+	Version byte        // Version du protocole RIP
+	Zero    uint16      // Champ de remplissage
+	Entries []RIPEntity // Entrées de la table de routage RIP
 }
 
-// RIPEntity representa una entrada de la tabla de enrutamiento RIP.
+// RIPEntity représente une entrée de la table de routage RIP.
 type RIPEntity struct {
-	AddressFamilyIdentifier uint16 // Identificador de la familia de direcciones (siempre 2 para IPv4)
-	RouteTag                uint16 // Etiqueta de ruta (siempre 0)
-	IPAddress               net.IP // Dirección IP de destino
-	SubnetMask              net.IP // Máscara de subred
-	NextHop                 net.IP // Próximo salto
-	Metric                  uint32 // Métrica asociada a la ruta
+	AddressFamilyIdentifier uint16 // Identificateur de la famille d'adresses (toujours 2 pour IPv4)
+	RouteTag                uint16 // Étiquette de route (toujours 0)
+	IPAddress               net.IP // Adresse IP de destination
+	SubnetMask              net.IP // Masque de sous-réseau
+	NextHop                 net.IP // Prochain saut
+	Metric                  uint32 // Métrique associée à la route
 }
 
-// MarshalBinary codifica el mensaje RIP en formato binario.
+// MarshalBinary encode le message RIP en format binaire.
 func (msg *RIPMessage) MarshalBinary() ([]byte, error) {
 	buf := make([]byte, 4+len(msg.Entries)*20)
 
@@ -51,10 +51,10 @@ func (msg *RIPMessage) MarshalBinary() ([]byte, error) {
 	return buf, nil
 }
 
-// UnmarshalBinary decodifica el mensaje RIP binario en la estructura de mensaje RIP.
+// UnmarshalBinary décode le message RIP binaire en structure de message RIP.
 func (msg *RIPMessage) UnmarshalBinary(data []byte) error {
 	if len(data) < 4 {
-		return fmt.Errorf("mensaje RIP demasiado corto")
+		return fmt.Errorf("message RIP trop court")
 	}
 
 	msg.Command = data[0]

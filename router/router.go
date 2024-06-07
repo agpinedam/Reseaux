@@ -16,7 +16,7 @@ type Interface struct {
 	Device string `yaml:"device"`
 	IP     net.IP `yaml:"ip"`
 	Mask   net.IPMask
-	Metric int // Agrega el campo para la métrica
+	Metric int // Ajouter le champ pour la métrique
 }
 
 type rawInterface struct {
@@ -42,7 +42,7 @@ func NewRouterFromFile(filePath string) (*Router, error) {
 	for _, rawIface := range rawInterfaces.Interfaces {
 		ip := net.ParseIP(rawIface.IP)
 		if ip == nil {
-			return nil, fmt.Errorf("invalid IP address: %s", rawIface.IP)
+			return nil, fmt.Errorf("adresse IP invalide : %s", rawIface.IP)
 		}
 
 		mask := net.CIDRMask(rawIface.Mask, 32)
@@ -50,7 +50,7 @@ func NewRouterFromFile(filePath string) (*Router, error) {
 			Device: rawIface.Device,
 			IP:     ip,
 			Mask:   mask,
-			Metric: 1, // Inicializa la métrica en 1
+			Metric: 1, // Initialiser la métrique à 1
 		}
 		interfaces = append(interfaces, iface)
 	}

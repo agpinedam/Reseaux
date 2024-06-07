@@ -16,7 +16,7 @@ func NewRouteTableFromRouter(r *router.Router) *RouteTable {
 	}
 
 	for i, iface := range r.Interfaces {
-		iface.Metric = 1 // Inicializar la métrica en 1
+		iface.Metric = 1 // Initialiser la métrique à 1
 		routeTable.Routes[i] = iface
 	}
 
@@ -32,10 +32,10 @@ func BuildRouteTableFromRIPMessage(msg *rip.RIPMessage) *RouteTable {
 		mask := net.IPMask(entry.SubnetMask)
 
 		routeTable.Routes[i] = router.Interface{
-			Device: entry.NextHop.String(), // O ajusta según el dispositivo adecuado
+			Device: entry.NextHop.String(), // Ou ajuster selon l'appareil approprié
 			IP:     entry.IPAddress,
 			Mask:   mask,
-			Metric: int(entry.Metric), // Utiliza la métrica recibida en el mensaje RIP
+			Metric: int(entry.Metric), // Utiliser la métrique reçue dans le message RIP
 		}
 	}
 
@@ -47,11 +47,11 @@ func (rt *RouteTable) MergeRouteTable(newTable *RouteTable) *RouteTable {
 		Routes: make([]router.Interface, len(rt.Routes)),
 	}
 
-	// Copiar las rutas existentes
+	// Copier les routes existantes
 	copy(mergedTable.Routes, rt.Routes)
 
-	// Para cada ruta en la nueva tabla, si ya existe en la tabla fusionada, ignórela.
-	// Si no existe, simplemente agrega la nueva ruta a la tabla fusionada.
+	// Pour chaque route dans la nouvelle table, si elle existe déjà dans la table fusionnée, l'ignorer.
+	// Si elle n'existe pas, ajouter simplement la nouvelle route à la table fusionnée.
 	for _, newRoute := range newTable.Routes {
 		var found bool
 		for _, existingRoute := range mergedTable.Routes {
@@ -61,7 +61,7 @@ func (rt *RouteTable) MergeRouteTable(newTable *RouteTable) *RouteTable {
 			}
 		}
 		if !found {
-			newRoute.Metric++ // Incrementar la métrica en 1 al añadir una nueva ruta
+			newRoute.Metric++ // Incrémenter la métrique de 1 lors de l'ajout d'une nouvelle route
 			mergedTable.Routes = append(mergedTable.Routes, newRoute)
 		}
 	}
@@ -70,7 +70,7 @@ func (rt *RouteTable) MergeRouteTable(newTable *RouteTable) *RouteTable {
 }
 
 func (rt *RouteTable) RecalculateMetrics() {
-	// Incrementar las métricas de todas las rutas en 1
+	// Incrémenter les métriques de toutes les routes de 1
 	for i := range rt.Routes {
 		rt.Routes[i].Metric++
 	}

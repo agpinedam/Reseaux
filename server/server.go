@@ -16,47 +16,47 @@ var (
 
 func main() {
 	broadcastAddr := &net.UDPAddr{
-		IP:   net.ParseIP("10.1.1.3"), // Dirección de broadcast para la red local
+		IP:   net.ParseIP("10.1.1.3"), // Adresse de diffusion pour le réseau local
 		Port: rip.RIPPort,
 	}
 
 	conn, err := net.ListenUDP("udp", broadcastAddr)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
+		fmt.Printf("Erreur : %s\n", err)
 		return
 	}
 	defer conn.Close()
-	fmt.Println("UDP server listening on 10.1.1.3:520")
+	fmt.Println("Serveur UDP à l'écoute sur 10.1.1.3:520")
 
-	// Leer la configuración del router desde el archivo YAML
-	routerConfigPath := "../data/routeur-r1.yaml"
-	r, err := router.NewRouterFromFile(routerConfigPath)
+	// Lire la configuration du routeur depuis le fichier YAML
+	cheminConfigRouteur := "../data/routeur-r1.yaml"
+	r, err := router.NewRouterFromFile(cheminConfigRouteur)
 	if err != nil {
-		fmt.Printf("Error loading router configuration: %v\n", err)
+		fmt.Printf("Erreur lors du chargement de la configuration du routeur : %v\n", err)
 		return
 	}
 
-	// Construir la tabla de enrutamiento desde la configuración del router
+	// Construire la table de routage à partir de la configuration du routeur
 	routeTable := table.NewRouteTableFromRouter(r)
-	fmt.Printf("Server routing table: %+v\n", routeTable)
+	fmt.Printf("Table de routage du serveur : %+v\n", routeTable)
 
 	buffer := make([]byte, 1024)
 	for {
 		n, clientAddr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
-			fmt.Printf("Error: %s\n", err)
+			fmt.Printf("Erreur : %s\n", err)
 			continue
 		}
 
 		var msg rip.RIPMessage
 		if err := msg.UnmarshalBinary(buffer[:n]); err != nil {
-			fmt.Printf("Error: %s\n", err)
+			fmt.Printf("Erreur : %s\n", err)
 			continue
 		}
 
 		tableID := fmt.Sprintf("%s:%d", clientAddr.IP, clientAddr.Port)
 
-		// Verificar si ya se ha recibido esta tabla antes
+		// Vérifier si cette table a déjà été reçue
 		routeTableLock.Lock()
 		if _, ok := receivedTables[tableID]; ok {
 			routeTableLock.Unlock()
@@ -65,16 +65,16 @@ func main() {
 		receivedTables[tableID] = struct{}{}
 		routeTableLock.Unlock()
 
-		fmt.Printf("Received RIP table from client %s: %+v\n", clientAddr, msg)
+		fmt.Printf("Table RIP reçue du client %s : %+v\n", clientAddr, msg)
 
-		// Construir la tabla de enrutamiento desde el mensaje RIP recibido
+		// Construire la table de routage à partir du message RIP reçu
 		receivedRouteTable := table.BuildRouteTableFromRIPMessage(&msg)
 
-		// Fusionar la tabla de enrutamiento recibida con la tabla del servidor
+		// Fusionner la table de routage reçue avec la table du serveur
 		routeTableLock.Lock()
 		routeTable = routeTable.MergeRouteTable(receivedRouteTable)
 		routeTableLock.Unlock()
 
-		fmt.Printf("Merged routing table: %+v\n", routeTable)
+		fmt.Printf("Table de routage fusionnée : %+v\n", routeTable)
 	}
 }
